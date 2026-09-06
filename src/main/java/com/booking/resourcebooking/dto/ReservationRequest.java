@@ -1,7 +1,7 @@
 package com.booking.resourcebooking.dto;
 
 import java.time.LocalDateTime;
-
+import com.booking.resourcebooking.enums.ReservationStatus;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -21,4 +21,6 @@ public class ReservationRequest {
     @NotNull(message = "End time is required")
     @Future(message = "End time must be in the future")
     private LocalDateTime endTime;
+    
+    private ReservationStatus status;
 }
