@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.booking.resourcebooking.security.CustomUserDetailsService;
 import com.booking.resourcebooking.security.JwtAuthenticationFilter;
@@ -88,17 +89,41 @@ public class SecurityConfig {
                 ).permitAll()
 
                 // Everything else requires authentication.
+//                .anyRequest().authenticated()
+//            )
+//
+//            // Authentication provider used for username/password login.
+//            .authenticationProvider(authenticationProvider())
+//
+//            // Check JWT before Spring's normal username/password filter.
+//            .addFilterBefore(
+//                jwtAuthenticationFilter,
+//                UsernamePasswordAuthenticationFilter.class
+//            );
+                
                 .anyRequest().authenticated()
-            )
-
-            // Authentication provider used for username/password login.
-            .authenticationProvider(authenticationProvider())
-
-            // Check JWT before Spring's normal username/password filter.
-            .addFilterBefore(
-                jwtAuthenticationFilter,
-                UsernamePasswordAuthenticationFilter.class
-            );
+            		)
+            		.exceptionHandling(exception -> exception
+            		    .authenticationEntryPoint((request, response, authException) -> {
+            		        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            		        response.setContentType("application/json");
+            		        response.getWriter().write(
+            		            "{\"status\":401,\"message\":\"Unauthorized\"}"
+            		        );
+            		    })
+            		    .accessDeniedHandler((request, response, accessDeniedException) -> {
+            		        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            		        response.setContentType("application/json");
+            		        response.getWriter().write(
+            		            "{\"status\":403,\"message\":\"Access denied\"}"
+            		        );
+            		    })
+            		)
+            		.authenticationProvider(authenticationProvider())
+            		.addFilterBefore(
+            		    jwtAuthenticationFilter,
+            		    UsernamePasswordAuthenticationFilter.class
+            		);
 
         return http.build();
     }
