@@ -294,3 +294,8 @@ Vaishnavi Bakal
 
 Java Backend Developer# backend-developer-as-final-74377-vaishnavi
 Final Project Assignment - This repository contains the complete final project code and documentation.
+## Assignment Submission
+
+This repository contains the completed solution for the Exelynt Backend Developer Assignment.
+
+The implementation includes JWT authentication, role-based authorization, resource and reservation management, validation, filtering, pagination, sorting, Swagger/OpenAPI documentation, MySQL persistence, and unit tests.
