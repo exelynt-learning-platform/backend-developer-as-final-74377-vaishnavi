@@ -51,6 +51,7 @@ public class Reservation {
     @Column(nullable = false)
     private ReservationStatus status;
 
+    
     @Column(nullable = false)
     private LocalDateTime startTime;
 
