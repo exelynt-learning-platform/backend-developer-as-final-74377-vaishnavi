@@ -40,6 +40,7 @@ public class ResourceController {
 
     // USER + ADMIN - Get all resources
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Page<ResourceResponse>> getAllResources(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -59,6 +60,7 @@ public class ResourceController {
 
     // USER + ADMIN - Get resource by ID
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ResourceResponse> getResourceById(
             @PathVariable Long id) {
 

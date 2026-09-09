@@ -1,24 +1,30 @@
 package com.booking.resourcebooking.service;
 
-import com.booking.resourcebooking.dto.ResourceRequest;
-import com.booking.resourcebooking.dto.ResourceResponse;
-import com.booking.resourcebooking.entity.Resource;
-import com.booking.resourcebooking.exception.ResourceNotFoundException;
-import com.booking.resourcebooking.repository.ResourceRepository;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.booking.resourcebooking.dto.ResourceRequest;
+import com.booking.resourcebooking.dto.ResourceResponse;
+import com.booking.resourcebooking.entity.Resource;
+import com.booking.resourcebooking.exception.BadRequestException;
+import com.booking.resourcebooking.exception.ResourceNotFoundException;
+import com.booking.resourcebooking.repository.ReservationRepository;
+import com.booking.resourcebooking.repository.ResourceRepository;
+
 @Service
 public class ResourceService {
 
-    private final ResourceRepository resourceRepository;
+	private final ResourceRepository resourceRepository;
+	private final ReservationRepository reservationRepository;
 
-    public ResourceService(ResourceRepository resourceRepository) {
-        this.resourceRepository = resourceRepository;
-    }
+	public ResourceService(
+	        ResourceRepository resourceRepository,
+	        ReservationRepository reservationRepository) {
 
+	    this.resourceRepository = resourceRepository;
+	    this.reservationRepository = reservationRepository;
+	}
     public ResourceResponse createResource(ResourceRequest request) {
 
         Resource resource = Resource.builder()
@@ -81,9 +87,14 @@ public class ResourceService {
                         )
                 );
 
+        if (reservationRepository.existsByResourceId(id)) {
+            throw new BadRequestException(
+                    "Resource cannot be deleted because it has existing reservations"
+            );
+        }
+
         resourceRepository.delete(resource);
     }
-
     private ResourceResponse mapToResponse(Resource resource) {
 
         return new ResourceResponse(

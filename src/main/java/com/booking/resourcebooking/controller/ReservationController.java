@@ -56,36 +56,7 @@ public class ReservationController {
                 );
     }
 
-    // USER - Get own reservations
-//    @GetMapping("/my")
-//    @PreAuthorize("hasRole('USER')")
-//    public ResponseEntity<Page<ReservationResponse>> getMyReservations(
-//            Authentication authentication,
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "10") int size,
-//            @RequestParam(defaultValue = "id") String sortBy,
-//            @RequestParam(defaultValue = "asc") String direction) {
-//
-//        String username = authentication.getName();
-//
-//        Pageable pageable = createPageable(
-//                page,
-//                size,
-//                sortBy,
-//                direction
-//        );
-//
-//        return ResponseEntity.ok(
-//                reservationService.getMyReservations(
-//                        username,
-//                        pageable
-//                )
-//        );
-//    }
-    
-    
-    
-    
+      
     @GetMapping("/my")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Page<ReservationResponse>> getMyReservations(
@@ -157,30 +128,6 @@ public class ReservationController {
                 )
         );
     }
-
-    // ADMIN - Get all reservations
-//    @GetMapping
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public ResponseEntity<Page<ReservationResponse>> getAllReservations(
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "10") int size,
-//            @RequestParam(defaultValue = "id") String sortBy,
-//            @RequestParam(defaultValue = "asc") String direction) {
-//
-//        Pageable pageable = createPageable(
-//                page,
-//                size,
-//                sortBy,
-//                direction
-//        );
-//
-//        return ResponseEntity.ok(
-//                reservationService.getAllReservations(pageable)
-//        );
-//    }
-    
-    
-    
     
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")

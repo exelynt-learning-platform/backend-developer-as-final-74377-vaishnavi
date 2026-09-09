@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
+import jakarta.persistence.criteria.Predicate;
 import com.booking.resourcebooking.dto.ReservationRequest;
 import com.booking.resourcebooking.dto.ReservationResponse;
 import com.booking.resourcebooking.entity.Reservation;
@@ -84,32 +84,6 @@ public class ReservationService {
         return mapToResponse(savedReservation);
     }
 
-    // USER - Get only their reservations
-//    public Page<ReservationResponse> getMyReservations(
-//            String username,
-//            Pageable pageable) {
-//
-//        User user = userRepository
-//                .findByUsername(username)
-//                .orElseThrow(() ->
-//                        new ResourceNotFoundException(
-//                                "User not found"
-//                        )
-//                );
-//
-//        return reservationRepository
-//                .findAll(
-//                        (root, query, criteriaBuilder) ->
-//                                criteriaBuilder.equal(
-//                                        root.get("user").get("id"),
-//                                        user.getId()
-//                                ),
-//                        pageable
-//                )
-//                .map(this::mapToResponse);
-//    }
-    
-    
     public Page<ReservationResponse> getMyReservations(
             String username,
             ReservationStatus status,
@@ -128,8 +102,8 @@ public class ReservationService {
         return reservationRepository.findAll(
                 (root, query, criteriaBuilder) -> {
 
-                    var predicates = criteriaBuilder.conjunction();
-
+                	Predicate predicates = criteriaBuilder.conjunction();
+                	
                     predicates = criteriaBuilder.and(
                             predicates,
                             criteriaBuilder.equal(
@@ -201,16 +175,6 @@ public class ReservationService {
         return mapToResponse(reservation);
     }
 
-    // ADMIN - Get all reservations
-//    public Page<ReservationResponse> getAllReservations(
-//            Pageable pageable) {
-//
-//        return reservationRepository
-//                .findAll(pageable)
-//                .map(this::mapToResponse);
-//    }
-    
-    
     public Page<ReservationResponse> getAllReservations(
             ReservationStatus status,
             BigDecimal minPrice,
@@ -220,7 +184,7 @@ public class ReservationService {
         return reservationRepository.findAll(
                 (root, query, criteriaBuilder) -> {
 
-                    var predicates = criteriaBuilder.conjunction();
+                	Predicate predicates = criteriaBuilder.conjunction();
 
                     if (status != null) {
                         predicates = criteriaBuilder.and(
@@ -263,12 +227,6 @@ public class ReservationService {
             Long id,
             ReservationRequest request) {
 
-        if (!request.getEndTime().isAfter(request.getStartTime())) {
-            throw new BadRequestException(
-                    "End time must be after start time"
-            );
-        }
-
         Reservation reservation = reservationRepository
                 .findById(id)
                 .orElseThrow(() ->
@@ -276,6 +234,12 @@ public class ReservationService {
                                 "Reservation not found with id: " + id
                         )
                 );
+
+        if (!request.getEndTime().isAfter(request.getStartTime())) {
+            throw new BadRequestException(
+                    "End time must be after start time"
+            );
+        }
 
         Resource resource = resourceRepository
                 .findById(request.getResourceId())
@@ -292,12 +256,6 @@ public class ReservationService {
             );
         }
 
-//        reservation.setResource(resource);
-//        reservation.setPrice(resource.getPrice());
-//        reservation.setStartTime(request.getStartTime());
-//        reservation.setEndTime(request.getEndTime());
-
-        
         reservation.setResource(resource);
         reservation.setPrice(resource.getPrice());
         reservation.setStartTime(request.getStartTime());
@@ -306,7 +264,7 @@ public class ReservationService {
         if (request.getStatus() != null) {
             reservation.setStatus(request.getStatus());
         }
-        
+
         Reservation updatedReservation =
                 reservationRepository.save(reservation);
 
