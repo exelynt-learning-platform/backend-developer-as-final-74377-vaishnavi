@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.booking.resourcebooking.dto.ReservationRequest;
 import com.booking.resourcebooking.dto.ReservationResponse;
+import com.booking.resourcebooking.dto.UpdateReservationStatusRequest;
 import com.booking.resourcebooking.enums.ReservationStatus;
 import com.booking.resourcebooking.service.ReservationService;
 
@@ -48,58 +50,30 @@ public class ReservationController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(
-                        reservationService.createReservation(
-                                request,
-                                username
-                        )
-                );
+                .body(reservationService.createReservation(request, username));
     }
 
-      
+    // USER - Get my reservations (Static routes mapped before dynamic /{id} routes)
     @GetMapping("/my")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Page<ReservationResponse>> getMyReservations(
 
             Authentication authentication,
 
-            @RequestParam(required = false)
-            ReservationStatus status,
-
-            @RequestParam(required = false)
-            BigDecimal minPrice,
-
-            @RequestParam(required = false)
-            BigDecimal maxPrice,
-
-            @RequestParam(defaultValue = "0")
-            int page,
-
-            @RequestParam(defaultValue = "10")
-            int size,
-
-            @RequestParam(defaultValue = "id")
-            String sortBy,
-
-            @RequestParam(defaultValue = "asc")
-            String direction) {
+            @RequestParam(required = false) ReservationStatus status,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
 
         String username = authentication.getName();
-
-        Pageable pageable = createPageable(
-                page,
-                size,
-                sortBy,
-                direction
-        );
+        Pageable pageable = createPageable(page, size, sortBy, direction);
 
         return ResponseEntity.ok(
                 reservationService.getMyReservations(
-                        username,
-                        status,
-                        minPrice,
-                        maxPrice,
-                        pageable
+                        username, status, minPrice, maxPrice, pageable
                 )
         );
     }
@@ -112,66 +86,36 @@ public class ReservationController {
             Authentication authentication) {
 
         String username = authentication.getName();
-
-        boolean isAdmin = authentication.getAuthorities()
-                .stream()
-                .anyMatch(authority ->
-                        authority.getAuthority()
-                                .equals("ROLE_ADMIN")
-                );
+        boolean isAdmin = checkIsAdmin(authentication);
 
         return ResponseEntity.ok(
-                reservationService.getReservationById(
-                        id,
-                        username,
-                        isAdmin
-                )
+                reservationService.getReservationById(id, username, isAdmin)
         );
     }
     
+    // ADMIN - Get all reservations
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<ReservationResponse>> getAllReservations(
 
-            @RequestParam(required = false)
-            ReservationStatus status,
+            @RequestParam(required = false) ReservationStatus status,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
 
-            @RequestParam(required = false)
-            BigDecimal minPrice,
-
-            @RequestParam(required = false)
-            BigDecimal maxPrice,
-
-            @RequestParam(defaultValue = "0")
-            int page,
-
-            @RequestParam(defaultValue = "10")
-            int size,
-
-            @RequestParam(defaultValue = "id")
-            String sortBy,
-
-            @RequestParam(defaultValue = "asc")
-            String direction) {
-
-        Pageable pageable = createPageable(
-                page,
-                size,
-                sortBy,
-                direction
-        );
+        Pageable pageable = createPageable(page, size, sortBy, direction);
 
         return ResponseEntity.ok(
                 reservationService.getAllReservations(
-                        status,
-                        minPrice,
-                        maxPrice,
-                        pageable
+                        status, minPrice, maxPrice, pageable
                 )
         );
     }
 
-    // ADMIN - Update reservation
+    // ADMIN - Update reservation details
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ReservationResponse> updateReservation(
@@ -179,10 +123,19 @@ public class ReservationController {
             @Valid @RequestBody ReservationRequest request) {
 
         return ResponseEntity.ok(
-                reservationService.updateReservation(
-                        id,
-                        request
-                )
+                reservationService.updateReservation(id, request)
+        );
+    }
+
+    // ADMIN - Update reservation status ONLY (New Endpoint)
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ReservationResponse> updateReservationStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateReservationStatusRequest request) {
+
+        return ResponseEntity.ok(
+                reservationService.updateReservationStatus(id, request)
         );
     }
 
@@ -193,9 +146,10 @@ public class ReservationController {
             @PathVariable Long id) {
 
         reservationService.deleteReservation(id);
-
         return ResponseEntity.noContent().build();
     }
+
+    // --- Private Helper Methods ---
 
     private Pageable createPageable(
             int page,
@@ -208,5 +162,12 @@ public class ReservationController {
                 : Sort.by(sortBy).ascending();
 
         return PageRequest.of(page, size, sort);
+    }
+    
+    // Extracted helper method to resolve the code smell in the review
+    private boolean checkIsAdmin(Authentication authentication) {
+        return authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
     }
 }

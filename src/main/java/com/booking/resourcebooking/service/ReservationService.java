@@ -1,13 +1,15 @@
 package com.booking.resourcebooking.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import jakarta.persistence.criteria.Predicate;
+
 import com.booking.resourcebooking.dto.ReservationRequest;
 import com.booking.resourcebooking.dto.ReservationResponse;
+import com.booking.resourcebooking.dto.UpdateReservationStatusRequest;
 import com.booking.resourcebooking.entity.Reservation;
 import com.booking.resourcebooking.entity.Resource;
 import com.booking.resourcebooking.entity.User;
@@ -17,6 +19,10 @@ import com.booking.resourcebooking.exception.ResourceNotFoundException;
 import com.booking.resourcebooking.repository.ReservationRepository;
 import com.booking.resourcebooking.repository.ResourceRepository;
 import com.booking.resourcebooking.repository.UserRepository;
+
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
 @Service
 public class ReservationService {
@@ -40,34 +46,12 @@ public class ReservationService {
             ReservationRequest request,
             String username) {
 
-        if (!request.getEndTime().isAfter(request.getStartTime())) {
-            throw new BadRequestException(
-                    "End time must be after start time"
-            );
-        }
-
-        Resource resource = resourceRepository
-                .findById(request.getResourceId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Resource not found with id: "
-                                        + request.getResourceId()
-                        )
-                );
-
-        if (!resource.isAvailable()) {
-            throw new BadRequestException(
-                    "Resource is currently unavailable"
-            );
-        }
+        validateTimeRange(request.getStartTime(), request.getEndTime());
+        Resource resource = getAvailableResource(request.getResourceId());
 
         User user = userRepository
                 .findByUsername(username)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found"
-                        )
-                );
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Reservation reservation = Reservation.builder()
                 .user(user)
@@ -78,10 +62,7 @@ public class ReservationService {
                 .endTime(request.getEndTime())
                 .build();
 
-        Reservation savedReservation =
-                reservationRepository.save(reservation);
-
-        return mapToResponse(savedReservation);
+        return mapToResponse(reservationRepository.save(reservation));
     }
 
     public Page<ReservationResponse> getMyReservations(
@@ -93,56 +74,17 @@ public class ReservationService {
 
         User user = userRepository
                 .findByUsername(username)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found"
-                        )
-                );
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return reservationRepository.findAll(
                 (root, query, criteriaBuilder) -> {
+                    Predicate predicates = buildReservationPredicates(
+                            root, criteriaBuilder, status, minPrice, maxPrice);
 
-                	Predicate predicates = criteriaBuilder.conjunction();
-                	
-                    predicates = criteriaBuilder.and(
+                    return criteriaBuilder.and(
                             predicates,
-                            criteriaBuilder.equal(
-                                    root.get("user").get("id"),
-                                    user.getId()
-                            )
+                            criteriaBuilder.equal(root.get("user").get("id"), user.getId())
                     );
-
-                    if (status != null) {
-                        predicates = criteriaBuilder.and(
-                                predicates,
-                                criteriaBuilder.equal(
-                                        root.get("status"),
-                                        status
-                                )
-                        );
-                    }
-
-                    if (minPrice != null) {
-                        predicates = criteriaBuilder.and(
-                                predicates,
-                                criteriaBuilder.greaterThanOrEqualTo(
-                                        root.get("price"),
-                                        minPrice
-                                )
-                        );
-                    }
-
-                    if (maxPrice != null) {
-                        predicates = criteriaBuilder.and(
-                                predicates,
-                                criteriaBuilder.lessThanOrEqualTo(
-                                        root.get("price"),
-                                        maxPrice
-                                )
-                        );
-                    }
-
-                    return predicates;
                 },
                 pageable
         ).map(this::mapToResponse);
@@ -154,19 +96,9 @@ public class ReservationService {
             String username,
             boolean isAdmin) {
 
-        Reservation reservation = reservationRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Reservation not found with id: " + id
-                        )
-                );
+        Reservation reservation = getExistingReservation(id);
 
-        if (!isAdmin &&
-                !reservation.getUser()
-                        .getUsername()
-                        .equals(username)) {
-
+        if (!isAdmin && !reservation.getUser().getUsername().equals(username)) {
             throw new org.springframework.security.access.AccessDeniedException(
                     "You are not authorized to view this reservation"
             );
@@ -182,112 +114,107 @@ public class ReservationService {
             Pageable pageable) {
 
         return reservationRepository.findAll(
-                (root, query, criteriaBuilder) -> {
-
-                	Predicate predicates = criteriaBuilder.conjunction();
-
-                    if (status != null) {
-                        predicates = criteriaBuilder.and(
-                                predicates,
-                                criteriaBuilder.equal(
-                                        root.get("status"),
-                                        status
-                                )
-                        );
-                    }
-
-                    if (minPrice != null) {
-                        predicates = criteriaBuilder.and(
-                                predicates,
-                                criteriaBuilder.greaterThanOrEqualTo(
-                                        root.get("price"),
-                                        minPrice
-                                )
-                        );
-                    }
-
-                    if (maxPrice != null) {
-                        predicates = criteriaBuilder.and(
-                                predicates,
-                                criteriaBuilder.lessThanOrEqualTo(
-                                        root.get("price"),
-                                        maxPrice
-                                )
-                        );
-                    }
-
-                    return predicates;
-                },
+                (root, query, criteriaBuilder) -> buildReservationPredicates(
+                        root, criteriaBuilder, status, minPrice, maxPrice),
                 pageable
         ).map(this::mapToResponse);
     }
 
-    // ADMIN - Update reservation
+    // ADMIN - Update reservation details
     public ReservationResponse updateReservation(
             Long id,
             ReservationRequest request) {
 
-        Reservation reservation = reservationRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Reservation not found with id: " + id
-                        )
-                );
-
-        if (!request.getEndTime().isAfter(request.getStartTime())) {
-            throw new BadRequestException(
-                    "End time must be after start time"
-            );
-        }
-
-        Resource resource = resourceRepository
-                .findById(request.getResourceId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Resource not found with id: "
-                                        + request.getResourceId()
-                        )
-                );
-
-        if (!resource.isAvailable()) {
-            throw new BadRequestException(
-                    "Resource is currently unavailable"
-            );
-        }
+        Reservation reservation = getExistingReservation(id);
+        validateTimeRange(request.getStartTime(), request.getEndTime());
+        Resource resource = getAvailableResource(request.getResourceId());
 
         reservation.setResource(resource);
         reservation.setPrice(resource.getPrice());
         reservation.setStartTime(request.getStartTime());
         reservation.setEndTime(request.getEndTime());
+        
+        // Removed request.getStatus() mapping here to fix the compilation error
 
-        if (request.getStatus() != null) {
-            reservation.setStatus(request.getStatus());
-        }
+        return mapToResponse(reservationRepository.save(reservation));
+    }
 
-        Reservation updatedReservation =
-                reservationRepository.save(reservation);
+    // ADMIN - Update reservation status ONLY (New Method)
+    public ReservationResponse updateReservationStatus(
+            Long id,
+            UpdateReservationStatusRequest request) {
 
-        return mapToResponse(updatedReservation);
+        Reservation reservation = getExistingReservation(id);
+        reservation.setStatus(request.getStatus());
+
+        return mapToResponse(reservationRepository.save(reservation));
     }
 
     // ADMIN - Delete reservation
     public void deleteReservation(Long id) {
-
-        Reservation reservation = reservationRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Reservation not found with id: " + id
-                        )
-                );
-
+        Reservation reservation = getExistingReservation(id);
         reservationRepository.delete(reservation);
     }
 
-    private ReservationResponse mapToResponse(
-            Reservation reservation) {
+    // --- Private Helper Methods (Fixes the "Long Method" code smell) ---
 
+    private void validateTimeRange(LocalDateTime start, LocalDateTime end) {
+        if (!end.isAfter(start)) {
+            throw new BadRequestException("End time must be after start time");
+        }
+    }
+
+    private Resource getAvailableResource(Long resourceId) {
+        Resource resource = resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Resource not found with id: " + resourceId));
+
+        if (!resource.isAvailable()) {
+            throw new BadRequestException("Resource is currently unavailable");
+        }
+        return resource;
+    }
+
+    private Reservation getExistingReservation(Long id) {
+        return reservationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Reservation not found with id: " + id));
+    }
+
+    private Predicate buildReservationPredicates(
+            Root<Reservation> root,
+            CriteriaBuilder criteriaBuilder,
+            ReservationStatus status,
+            BigDecimal minPrice,
+            BigDecimal maxPrice) {
+
+        Predicate predicates = criteriaBuilder.conjunction();
+
+        if (status != null) {
+            predicates = criteriaBuilder.and(
+                    predicates,
+                    criteriaBuilder.equal(root.get("status"), status)
+            );
+        }
+
+        if (minPrice != null) {
+            predicates = criteriaBuilder.and(
+                    predicates,
+                    criteriaBuilder.greaterThanOrEqualTo(root.get("price"), minPrice)
+            );
+        }
+
+        if (maxPrice != null) {
+            predicates = criteriaBuilder.and(
+                    predicates,
+                    criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice)
+            );
+        }
+
+        return predicates;
+    }
+
+    private ReservationResponse mapToResponse(Reservation reservation) {
         return new ReservationResponse(
                 reservation.getId(),
                 reservation.getUser().getId(),

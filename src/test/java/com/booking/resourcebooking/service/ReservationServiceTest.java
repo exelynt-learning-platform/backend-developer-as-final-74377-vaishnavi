@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import com.booking.resourcebooking.dto.ReservationRequest;
 import com.booking.resourcebooking.dto.ReservationResponse;
+import com.booking.resourcebooking.dto.UpdateReservationStatusRequest;
 import com.booking.resourcebooking.entity.Reservation;
 import com.booking.resourcebooking.entity.Resource;
 import com.booking.resourcebooking.entity.User;
@@ -30,204 +31,121 @@ class ReservationServiceTest {
 
     @Test
     void shouldRejectReservationWhenEndTimeIsBeforeStartTime() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         ReservationRequest request = new ReservationRequest();
-
         request.setResourceId(1L);
-        request.setStartTime(
-                LocalDateTime.now().plusHours(2)
-        );
-        request.setEndTime(
-                LocalDateTime.now().plusHours(1)
-        );
+        request.setStartTime(LocalDateTime.now().plusHours(2));
+        request.setEndTime(LocalDateTime.now().plusHours(1));
 
         assertThrows(
                 BadRequestException.class,
-                () -> reservationService.createReservation(
-                        request,
-                        "user"
-                )
+                () -> reservationService.createReservation(request, "user")
         );
     }
     
     @Test
     void shouldRejectReservationWhenResourceIsUnavailable() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         Resource resource = Resource.builder()
-                .id(1L)
-                .name("Conference Room")
-                .price(new java.math.BigDecimal("1000"))
-                .available(false)
+                .id(1L).name("Conference Room")
+                .price(new java.math.BigDecimal("1000")).available(false)
                 .build();
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
+        when(resourceRepository.findById(1L)).thenReturn(Optional.of(resource));
 
         ReservationRequest request = new ReservationRequest();
-
         request.setResourceId(1L);
-        request.setStartTime(
-                LocalDateTime.now().plusHours(1)
-        );
-        request.setEndTime(
-                LocalDateTime.now().plusHours(2)
-        );
+        request.setStartTime(LocalDateTime.now().plusHours(1));
+        request.setEndTime(LocalDateTime.now().plusHours(2));
 
         assertThrows(
                 BadRequestException.class,
-                () -> reservationService.createReservation(
-                        request,
-                        "user"
-                )
+                () -> reservationService.createReservation(request, "user")
         );
     }
     
     @Test
     void shouldRejectReservationWhenResourceDoesNotExist() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
-
-        when(resourceRepository.findById(999L))
-                .thenReturn(Optional.empty());
+        when(resourceRepository.findById(999L)).thenReturn(Optional.empty());
 
         ReservationRequest request = new ReservationRequest();
-
         request.setResourceId(999L);
-        request.setStartTime(
-                LocalDateTime.now().plusHours(1)
-        );
-        request.setEndTime(
-                LocalDateTime.now().plusHours(2)
-        );
+        request.setStartTime(LocalDateTime.now().plusHours(1));
+        request.setEndTime(LocalDateTime.now().plusHours(2));
 
         assertThrows(
                 ResourceNotFoundException.class,
-                () -> reservationService.createReservation(
-                        request,
-                        "user"
-                )
+                () -> reservationService.createReservation(request, "user")
         );
     }
     
     @Test
     void shouldCreateReservationSuccessfully() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         Resource resource = Resource.builder()
-                .id(1L)
-                .name("Conference Room")
-                .price(new java.math.BigDecimal("1000"))
-                .available(true)
+                .id(1L).name("Conference Room")
+                .price(new java.math.BigDecimal("1000")).available(true)
                 .build();
 
         User user = User.builder()
-                .id(10L)
-                .username("user")
+                .id(10L).username("user")
                 .build();
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
-
-        when(userRepository.findByUsername("user"))
-                .thenReturn(Optional.of(user));
+        when(resourceRepository.findById(1L)).thenReturn(Optional.of(resource));
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
 
         Reservation savedReservation = Reservation.builder()
-                .id(100L)
-                .user(user)
-                .resource(resource)
+                .id(100L).user(user).resource(resource)
                 .price(resource.getPrice())
                 .status(com.booking.resourcebooking.enums.ReservationStatus.PENDING)
                 .startTime(LocalDateTime.now().plusHours(1))
                 .endTime(LocalDateTime.now().plusHours(2))
                 .build();
 
-        when(reservationRepository.save(any(Reservation.class)))
-                .thenReturn(savedReservation);
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(savedReservation);
 
         ReservationRequest request = new ReservationRequest();
-
         request.setResourceId(1L);
         request.setStartTime(LocalDateTime.now().plusHours(1));
         request.setEndTime(LocalDateTime.now().plusHours(2));
 
-        var response = reservationService.createReservation(
-                request,
-                "user"
-        );
+        var response = reservationService.createReservation(request, "user");
 
         assertNotNull(response);
         assertEquals(100L, response.getId());
         assertEquals("user", response.getUsername());
         assertEquals(1L, response.getResourceId());
-        assertEquals(
-                new java.math.BigDecimal("1000"),
-                response.getPrice()
-        );
-        assertEquals(
-                com.booking.resourcebooking.enums.ReservationStatus.PENDING,
-                response.getStatus()
-        );
+        assertEquals(new java.math.BigDecimal("1000"), response.getPrice());
+        assertEquals(com.booking.resourcebooking.enums.ReservationStatus.PENDING, response.getStatus());
 
         verify(resourceRepository).findById(1L);
         verify(userRepository).findByUsername("user");
@@ -236,108 +154,68 @@ class ReservationServiceTest {
     
     @Test
     void shouldRejectReservationWhenUserDoesNotExist() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         Resource resource = Resource.builder()
-                .id(1L)
-                .name("Conference Room")
-                .price(new java.math.BigDecimal("1000"))
-                .available(true)
+                .id(1L).name("Conference Room")
+                .price(new java.math.BigDecimal("1000")).available(true)
                 .build();
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
-
-        when(userRepository.findByUsername("unknown"))
-                .thenReturn(Optional.empty());
+        when(resourceRepository.findById(1L)).thenReturn(Optional.of(resource));
+        when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
 
         ReservationRequest request = new ReservationRequest();
-
         request.setResourceId(1L);
         request.setStartTime(LocalDateTime.now().plusHours(1));
         request.setEndTime(LocalDateTime.now().plusHours(2));
 
         assertThrows(
                 ResourceNotFoundException.class,
-                () -> reservationService.createReservation(
-                        request,
-                        "unknown"
-                )
+                () -> reservationService.createReservation(request, "unknown")
         );
 
         verify(resourceRepository).findById(1L);
         verify(userRepository).findByUsername("unknown");
-        verify(reservationRepository, never())
-                .save(any(Reservation.class));
+        verify(reservationRepository, never()).save(any(Reservation.class));
     }
     
     @Test
     void shouldAllowOwnerToViewReservation() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         User user = User.builder()
-                .id(10L)
-                .username("user")
-                .email("user@gmail.com")
-                .password("password")
-                .role(com.booking.resourcebooking.enums.Role.USER)
+                .id(10L).username("user").email("user@gmail.com")
+                .password("password").role(com.booking.resourcebooking.enums.Role.USER)
                 .build();
 
         Resource resource = Resource.builder()
-                .id(1L)
-                .name("Conference Room")
-                .price(new java.math.BigDecimal("1000"))
-                .available(true)
+                .id(1L).name("Conference Room")
+                .price(new java.math.BigDecimal("1000")).available(true)
                 .build();
 
         Reservation reservation = Reservation.builder()
-                .id(100L)
-                .user(user)
-                .resource(resource)
+                .id(100L).user(user).resource(resource)
                 .price(new java.math.BigDecimal("1000"))
                 .status(com.booking.resourcebooking.enums.ReservationStatus.PENDING)
                 .startTime(LocalDateTime.now().plusHours(1))
                 .endTime(LocalDateTime.now().plusHours(2))
                 .build();
 
-        when(reservationRepository.findById(100L))
-                .thenReturn(Optional.of(reservation));
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(reservation));
 
-        var response = reservationService.getReservationById(
-                100L,
-                "user",
-                false
-        );
+        var response = reservationService.getReservationById(100L, "user", false);
 
         assertNotNull(response);
         assertEquals(100L, response.getId());
@@ -346,60 +224,40 @@ class ReservationServiceTest {
 
         verify(reservationRepository).findById(100L);
     }
+
     @Test
     void shouldRejectDifferentUserFromViewingReservation() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         User owner = User.builder()
-                .id(10L)
-                .username("owner")
-                .email("owner@gmail.com")
-                .password("password")
-                .role(com.booking.resourcebooking.enums.Role.USER)
+                .id(10L).username("owner").email("owner@gmail.com")
+                .password("password").role(com.booking.resourcebooking.enums.Role.USER)
                 .build();
 
         Resource resource = Resource.builder()
-                .id(1L)
-                .name("Conference Room")
-                .price(new java.math.BigDecimal("1000"))
-                .available(true)
+                .id(1L).name("Conference Room")
+                .price(new java.math.BigDecimal("1000")).available(true)
                 .build();
 
         Reservation reservation = Reservation.builder()
-                .id(100L)
-                .user(owner)
-                .resource(resource)
+                .id(100L).user(owner).resource(resource)
                 .price(new java.math.BigDecimal("1000"))
                 .status(com.booking.resourcebooking.enums.ReservationStatus.PENDING)
                 .startTime(LocalDateTime.now().plusHours(1))
                 .endTime(LocalDateTime.now().plusHours(2))
                 .build();
 
-        when(reservationRepository.findById(100L))
-                .thenReturn(Optional.of(reservation));
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(reservation));
 
         assertThrows(
                 org.springframework.security.access.AccessDeniedException.class,
-                () -> reservationService.getReservationById(
-                        100L,
-                        "differentUser",
-                        false
-                )
+                () -> reservationService.getReservationById(100L, "differentUser", false)
         );
 
         verify(reservationRepository).findById(100L);
@@ -407,56 +265,35 @@ class ReservationServiceTest {
     
     @Test
     void shouldAllowAdminToViewAnyReservation() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         User owner = User.builder()
-                .id(10L)
-                .username("owner")
-                .email("owner@gmail.com")
-                .password("password")
-                .role(com.booking.resourcebooking.enums.Role.USER)
+                .id(10L).username("owner").email("owner@gmail.com")
+                .password("password").role(com.booking.resourcebooking.enums.Role.USER)
                 .build();
 
         Resource resource = Resource.builder()
-                .id(1L)
-                .name("Conference Room")
-                .price(new java.math.BigDecimal("1000"))
-                .available(true)
+                .id(1L).name("Conference Room")
+                .price(new java.math.BigDecimal("1000")).available(true)
                 .build();
 
         Reservation reservation = Reservation.builder()
-                .id(100L)
-                .user(owner)
-                .resource(resource)
+                .id(100L).user(owner).resource(resource)
                 .price(new java.math.BigDecimal("1000"))
                 .status(com.booking.resourcebooking.enums.ReservationStatus.PENDING)
                 .startTime(LocalDateTime.now().plusHours(1))
                 .endTime(LocalDateTime.now().plusHours(2))
                 .build();
 
-        when(reservationRepository.findById(100L))
-                .thenReturn(Optional.of(reservation));
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(reservation));
 
-        var response = reservationService.getReservationById(
-                100L,
-                "admin",
-                true
-        );
+        var response = reservationService.getReservationById(100L, "admin", true);
 
         assertNotNull(response);
         assertEquals(100L, response.getId());
@@ -467,235 +304,148 @@ class ReservationServiceTest {
     
     @Test
     void shouldUpdateReservationSuccessfully() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         User user = User.builder()
-                .id(10L)
-                .username("user")
-                .email("user@gmail.com")
-                .password("password")
-                .role(com.booking.resourcebooking.enums.Role.USER)
+                .id(10L).username("user").email("user@gmail.com")
+                .password("password").role(com.booking.resourcebooking.enums.Role.USER)
                 .build();
 
         Resource oldResource = Resource.builder()
-                .id(1L)
-                .name("Old Room")
-                .price(new java.math.BigDecimal("1000"))
-                .available(true)
+                .id(1L).name("Old Room")
+                .price(new java.math.BigDecimal("1000")).available(true)
                 .build();
 
         Resource newResource = Resource.builder()
-                .id(2L)
-                .name("New Room")
-                .price(new java.math.BigDecimal("1500"))
-                .available(true)
+                .id(2L).name("New Room")
+                .price(new java.math.BigDecimal("1500")).available(true)
                 .build();
 
         Reservation reservation = Reservation.builder()
-                .id(100L)
-                .user(user)
-                .resource(oldResource)
+                .id(100L).user(user).resource(oldResource)
                 .price(oldResource.getPrice())
                 .status(com.booking.resourcebooking.enums.ReservationStatus.PENDING)
                 .startTime(LocalDateTime.now().plusHours(1))
                 .endTime(LocalDateTime.now().plusHours(2))
                 .build();
 
-        when(reservationRepository.findById(100L))
-                .thenReturn(Optional.of(reservation));
-
-        when(resourceRepository.findById(2L))
-                .thenReturn(Optional.of(newResource));
-
-        when(reservationRepository.save(any(Reservation.class)))
-                .thenReturn(reservation);
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(reservation));
+        when(resourceRepository.findById(2L)).thenReturn(Optional.of(newResource));
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(reservation);
 
         ReservationRequest request = new ReservationRequest();
-
         request.setResourceId(2L);
         request.setStartTime(LocalDateTime.now().plusHours(3));
         request.setEndTime(LocalDateTime.now().plusHours(4));
-        request.setStatus(
-                com.booking.resourcebooking.enums.ReservationStatus.CONFIRMED
-        );
 
-        var response = reservationService.updateReservation(
-                100L,
-                request
-        );
+        var response = reservationService.updateReservation(100L, request);
 
         assertNotNull(response);
         assertEquals(100L, response.getId());
-
         assertEquals(2L, reservation.getResource().getId());
-        assertEquals(
-                new java.math.BigDecimal("1500"),
-                reservation.getPrice()
-        );
-
-        assertEquals(
-                com.booking.resourcebooking.enums.ReservationStatus.CONFIRMED,
-                reservation.getStatus()
-        );
+        assertEquals(new java.math.BigDecimal("1500"), reservation.getPrice());
+        assertEquals(com.booking.resourcebooking.enums.ReservationStatus.PENDING, reservation.getStatus());
 
         verify(reservationRepository).findById(100L);
         verify(resourceRepository).findById(2L);
         verify(reservationRepository).save(any(Reservation.class));
     }
+
     @Test
     void shouldRejectUpdateWhenReservationDoesNotExist() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
-
-        when(reservationRepository.findById(100L))
-                .thenReturn(Optional.empty());
+        when(reservationRepository.findById(100L)).thenReturn(Optional.empty());
 
         ReservationRequest request = new ReservationRequest();
-
         request.setResourceId(1L);
         request.setStartTime(LocalDateTime.now().plusHours(1));
         request.setEndTime(LocalDateTime.now().plusHours(2));
 
         assertThrows(
                 ResourceNotFoundException.class,
-                () -> reservationService.updateReservation(
-                        100L,
-                        request
-                )
+                () -> reservationService.updateReservation(100L, request)
         );
 
         verify(reservationRepository).findById(100L);
         verify(resourceRepository, never()).findById(anyLong());
         verify(reservationRepository, never()).save(any(Reservation.class));
     }
+
     @Test
     void shouldRejectUpdateWhenResourceDoesNotExist() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         User user = User.builder()
-                .id(10L)
-                .username("user")
+                .id(10L).username("user")
                 .build();
 
         Reservation reservation = Reservation.builder()
-                .id(100L)
-                .user(user)
+                .id(100L).user(user)
                 .build();
 
-        when(reservationRepository.findById(100L))
-                .thenReturn(Optional.of(reservation));
-
-        when(resourceRepository.findById(2L))
-                .thenReturn(Optional.empty());
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(reservation));
+        when(resourceRepository.findById(2L)).thenReturn(Optional.empty());
 
         ReservationRequest request = new ReservationRequest();
-
         request.setResourceId(2L);
         request.setStartTime(LocalDateTime.now().plusHours(1));
         request.setEndTime(LocalDateTime.now().plusHours(2));
 
         assertThrows(
                 ResourceNotFoundException.class,
-                () -> reservationService.updateReservation(
-                        100L,
-                        request
-                )
+                () -> reservationService.updateReservation(100L, request)
         );
 
         verify(reservationRepository).findById(100L);
         verify(resourceRepository).findById(2L);
-        verify(reservationRepository, never())
-                .save(any(Reservation.class));
+        verify(reservationRepository, never()).save(any(Reservation.class));
     }
-    
     
     @Test
     void shouldDeleteReservationSuccessfully() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         User user = User.builder()
-                .id(10L)
-                .username("user")
+                .id(10L).username("user")
                 .build();
 
         Resource resource = Resource.builder()
-                .id(1L)
-                .name("Conference Room")
-                .price(new java.math.BigDecimal("1000"))
-                .available(true)
+                .id(1L).name("Conference Room")
+                .price(new java.math.BigDecimal("1000")).available(true)
                 .build();
 
         Reservation reservation = Reservation.builder()
-                .id(100L)
-                .user(user)
-                .resource(resource)
+                .id(100L).user(user).resource(resource)
                 .price(new java.math.BigDecimal("1000"))
-                .status(
-                        com.booking.resourcebooking.enums.ReservationStatus.PENDING
-                )
+                .status(com.booking.resourcebooking.enums.ReservationStatus.PENDING)
                 .build();
 
-        when(reservationRepository.findById(100L))
-                .thenReturn(Optional.of(reservation));
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(reservation));
 
         reservationService.deleteReservation(100L);
 
@@ -705,25 +455,15 @@ class ReservationServiceTest {
     
     @Test
     void shouldRejectDeleteWhenReservationDoesNotExist() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
-
-        when(reservationRepository.findById(999L))
-                .thenReturn(Optional.empty());
+        when(reservationRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(
                 ResourceNotFoundException.class,
@@ -731,34 +471,21 @@ class ReservationServiceTest {
         );
 
         verify(reservationRepository).findById(999L);
-
-        verify(reservationRepository, never())
-                .delete(any(Reservation.class));
+        verify(reservationRepository, never()).delete(any(Reservation.class));
     }
     
     @Test
     void shouldGetAllReservationsSuccessfully() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         org.springframework.data.domain.Page<Reservation> reservationPage =
-                new org.springframework.data.domain.PageImpl<>(
-                        java.util.List.of()
-                );
+                new org.springframework.data.domain.PageImpl<>(java.util.List.of());
 
         when(reservationRepository.findAll(
                 any(org.springframework.data.jpa.domain.Specification.class),
@@ -767,9 +494,7 @@ class ReservationServiceTest {
 
         org.springframework.data.domain.Page<ReservationResponse> response =
                 reservationService.getAllReservations(
-                        null,
-                        null,
-                        null,
+                        null, null, null,
                         org.springframework.data.domain.PageRequest.of(0, 10)
                 );
 
@@ -784,27 +509,16 @@ class ReservationServiceTest {
     
     @Test
     void shouldGetAllReservationsWithStatusFilter() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         org.springframework.data.domain.Page<Reservation> reservationPage =
-                new org.springframework.data.domain.PageImpl<>(
-                        java.util.List.of()
-                );
+                new org.springframework.data.domain.PageImpl<>(java.util.List.of());
 
         when(reservationRepository.findAll(
                 any(org.springframework.data.jpa.domain.Specification.class),
@@ -814,8 +528,7 @@ class ReservationServiceTest {
         org.springframework.data.domain.Page<ReservationResponse> response =
                 reservationService.getAllReservations(
                         com.booking.resourcebooking.enums.ReservationStatus.PENDING,
-                        null,
-                        null,
+                        null, null,
                         org.springframework.data.domain.PageRequest.of(0, 10)
                 );
 
@@ -830,27 +543,16 @@ class ReservationServiceTest {
     
     @Test
     void shouldGetAllReservationsWithMinimumPriceFilter() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         org.springframework.data.domain.Page<Reservation> reservationPage =
-                new org.springframework.data.domain.PageImpl<>(
-                        java.util.List.of()
-                );
+                new org.springframework.data.domain.PageImpl<>(java.util.List.of());
 
         when(reservationRepository.findAll(
                 any(org.springframework.data.jpa.domain.Specification.class),
@@ -859,9 +561,7 @@ class ReservationServiceTest {
 
         org.springframework.data.domain.Page<ReservationResponse> response =
                 reservationService.getAllReservations(
-                        null,
-                        new java.math.BigDecimal("500"),
-                        null,
+                        null, new java.math.BigDecimal("500"), null,
                         org.springframework.data.domain.PageRequest.of(0, 10)
                 );
 
@@ -876,27 +576,16 @@ class ReservationServiceTest {
     
     @Test
     void shouldGetAllReservationsWithMaximumPriceFilter() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         org.springframework.data.domain.Page<Reservation> reservationPage =
-                new org.springframework.data.domain.PageImpl<>(
-                        java.util.List.of()
-                );
+                new org.springframework.data.domain.PageImpl<>(java.util.List.of());
 
         when(reservationRepository.findAll(
                 any(org.springframework.data.jpa.domain.Specification.class),
@@ -905,9 +594,7 @@ class ReservationServiceTest {
 
         org.springframework.data.domain.Page<ReservationResponse> response =
                 reservationService.getAllReservations(
-                        null,
-                        null,
-                        new java.math.BigDecimal("2000"),
+                        null, null, new java.math.BigDecimal("2000"),
                         org.springframework.data.domain.PageRequest.of(0, 10)
                 );
 
@@ -922,79 +609,41 @@ class ReservationServiceTest {
     
     @Test
     void shouldUpdateReservationStatusSuccessfully() {
+        ReservationRepository reservationRepository = mock(ReservationRepository.class);
+        ResourceRepository resourceRepository = mock(ResourceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
 
-        ReservationRepository reservationRepository =
-                mock(ReservationRepository.class);
-
-        ResourceRepository resourceRepository =
-                mock(ResourceRepository.class);
-
-        UserRepository userRepository =
-                mock(UserRepository.class);
-
-        ReservationService reservationService =
-                new ReservationService(
-                        reservationRepository,
-                        resourceRepository,
-                        userRepository
-                );
+        ReservationService reservationService = new ReservationService(
+                reservationRepository, resourceRepository, userRepository
+        );
 
         User user = User.builder()
-                .id(10L)
-                .username("user")
+                .id(10L).username("user")
                 .build();
 
         Resource resource = Resource.builder()
-                .id(1L)
-                .name("Conference Room")
-                .price(new java.math.BigDecimal("1000"))
-                .available(true)
+                .id(1L).name("Conference Room")
+                .price(new java.math.BigDecimal("1000")).available(true)
                 .build();
 
         Reservation reservation = Reservation.builder()
-                .id(100L)
-                .user(user)
-                .resource(resource)
+                .id(100L).user(user).resource(resource)
                 .price(new java.math.BigDecimal("1000"))
-                .status(
-                        com.booking.resourcebooking.enums.ReservationStatus.PENDING
-                )
+                .status(com.booking.resourcebooking.enums.ReservationStatus.PENDING)
                 .startTime(LocalDateTime.of(2026, 9, 10, 10, 0))
                 .endTime(LocalDateTime.of(2026, 9, 10, 12, 0))
                 .build();
 
-        ReservationRequest request = new ReservationRequest();
-        request.setResourceId(1L);
-        request.setStartTime(
-                LocalDateTime.of(2026, 9, 10, 14, 0)
-        );
-        request.setEndTime(
-                LocalDateTime.of(2026, 9, 10, 16, 0)
-        );
-        request.setStatus(
-                com.booking.resourcebooking.enums.ReservationStatus.CONFIRMED
-        );
+        UpdateReservationStatusRequest request = new UpdateReservationStatusRequest();
+        request.setStatus(com.booking.resourcebooking.enums.ReservationStatus.CONFIRMED);
 
-        when(reservationRepository.findById(100L))
-                .thenReturn(Optional.of(reservation));
+        when(reservationRepository.findById(100L)).thenReturn(Optional.of(reservation));
+        when(reservationRepository.save(reservation)).thenReturn(reservation);
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
-
-        when(reservationRepository.save(reservation))
-                .thenReturn(reservation);
-
-        ReservationResponse response =
-                reservationService.updateReservation(
-                        100L,
-                        request
-                );
+        ReservationResponse response = reservationService.updateReservationStatus(100L, request);
 
         assertNotNull(response);
-        assertEquals(
-                com.booking.resourcebooking.enums.ReservationStatus.CONFIRMED,
-                reservation.getStatus()
-        );
+        assertEquals(com.booking.resourcebooking.enums.ReservationStatus.CONFIRMED, reservation.getStatus());
 
         verify(reservationRepository).save(reservation);
     }
