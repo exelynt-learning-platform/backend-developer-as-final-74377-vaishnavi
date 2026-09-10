@@ -17,8 +17,8 @@ import io.jsonwebtoken.security.Keys;
 public class JwtService {
 
     // Added a valid Base64-encoded default key (256-bit minimum for HS256)
-    @Value("${jwt.secret:ZGVmYXVsdFNlY3JldEtleUZvckxvY2FsVGVzdGluZzEyMzQ1Njc4OTA=}")
-    private String secretKey;
+	@Value("${jwt.secret}")
+	private String secretKey;
 
     // Added a default expiration of 86400000 milliseconds (24 hours)
     @Value("${jwt.expiration:86400000}")
